@@ -42,7 +42,7 @@ app.layout = dbc.Container([
             'deselect_all': 'limpar a seleção'}),
             width={"size": 12, "offset": 0, "order": 1})
             ]),
-
+#aqui entram os gráficos
     dbc.Row([
     dbc.Col(
         html.Div(id="graf")
@@ -55,7 +55,7 @@ app.layout = dbc.Container([
     Input(component_id='dropdown-art', component_property='value'),
 )
 def update_graphs(input):
-#deixa zerado antes de qualquer imput
+#deixa zerado antes de qualquer input
     if input is None or input == []:
         return []
 #cria lista vazia para graficos
@@ -70,6 +70,7 @@ def update_graphs(input):
         di = {k: Counter(c)[k]
     for k in ['u', 'p', 'P', 'a', 'A', 's', 'S']
 }
+#calcula porcentagem de uso
         porcentagem = [
     (v / sum(di.values())) *100 
     for v in di.values()
@@ -85,9 +86,9 @@ def update_graphs(input):
             },
             title=i
         )
-
+#centraliza o titulo
         fig.update_layout(title_x=0.5)
-
+#da nome pra cada letra
         labels = {
     'u': 'Uníssono',
     'p': 'Passo descendente',
@@ -97,6 +98,7 @@ def update_graphs(input):
     's': 'Salto descendente',
     'S': 'Salto ascendente'
 }
+#gera uma lista com os novos nomes e com os valores de aparição
         customdata = [
     [
         labels[k],
@@ -104,6 +106,7 @@ def update_graphs(input):
     ]
     for k, v in di.items()
 ]
+#define o hover
         fig.update_traces(
              customdata=customdata,
     hovertemplate=
@@ -114,14 +117,14 @@ def update_graphs(input):
     f"Artista: {i}<br>" +
     "<extra></extra>"
 )
-
+#adiciona cada grafico em uma coluna 
         grafs.append(
             dbc.Col(
                 dcc.Graph(figure=fig),
                 width=4
             )
         )
-
+# caso a row encha ele automaticamente cria uma nova
     return dbc.Row(grafs)        
 
 if __name__ == '__main__':

@@ -55,23 +55,27 @@ app.layout = dbc.Container([
     Input(component_id='dropdown-art', component_property='value'),
 )
 def update_graphs(input):
-
+#deixa zerado antes de qualquer imput
     if input is None or input == []:
         return []
-
+#cria lista vazia para graficos
     grafs = []
-
+#itera para cada grafico
     for i in input:
-
+#junta todas as palavras usadas pelo artista
         c = "".join(
             df[df["corpus_id"] == i]["c_word"].tolist()
         )
-
+#conta o numero de apariçoes de cada letra e gera um dicionario
         di = {k: Counter(c)[k]
     for k in ['u', 'p', 'P', 'a', 'A', 's', 'S']
 }
+        porcentagem = [
+    (v / sum(di.values())) 
+    for v in di.values()
+]
 
-
+#gera os graficos
         fig = px.bar(
             x=list(di.keys()),
             y=list(di.values()),
@@ -81,12 +85,33 @@ def update_graphs(input):
             },
             title=i
         )
+
         fig.update_layout(title_x=0.5)
-        
+
+        labels = {
+    'u': 'Uníssono',
+    'p': 'Passo descendente',
+    'P': 'Passo ascendente',
+    'a': 'Arpejo descendente',
+    'A': 'Arpejo ascendente',
+    's': 'Salto descendente',
+    'S': 'Salto ascendente'
+}
+        customdata = [
+    [
+        labels[k],
+        (v / sum(di.values())) * 100
+    ]
+    for k, v in di.items()
+]
         fig.update_traces(
+    customdata=customdata,
+
     hovertemplate=
-    f"Letra: %{{x}}<br>" +
-    f"Ocorrências: %{{y}}<br>" +
+    "C-letra: %{x}<br>" +
+    "Descrição da C-letra: %{customdata[0]}<br>" +
+    "Ocorrências: %{y}<br>" +
+    "Percentual de uso: %{customdata[1]:.2f}%<br>" +
     f"Artista: {i}<br>" +
     "<extra></extra>"
 )

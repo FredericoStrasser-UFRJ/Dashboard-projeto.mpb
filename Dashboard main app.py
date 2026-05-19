@@ -71,17 +71,17 @@ def update_graphs(input):
     for k in ['u', 'p', 'P', 'a', 'A', 's', 'S']
 }
         porcentagem = [
-    (v / sum(di.values())) 
+    (v / sum(di.values())) *100 
     for v in di.values()
 ]
 
 #gera os graficos
         fig = px.bar(
             x=list(di.keys()),
-            y=list(di.values()),
+            y=list(porcentagem),
             labels={
                 "x": "Letras",
-                "y": "Ocorrências"
+                "y": "Porcentagem de uso"
             },
             title=i
         )
@@ -100,18 +100,17 @@ def update_graphs(input):
         customdata = [
     [
         labels[k],
-        (v / sum(di.values())) * 100
+        v
     ]
     for k, v in di.items()
 ]
         fig.update_traces(
-    customdata=customdata,
-
+             customdata=customdata,
     hovertemplate=
     "C-letra: %{x}<br>" +
     "Descrição da C-letra: %{customdata[0]}<br>" +
-    "Ocorrências: %{y}<br>" +
-    "Percentual de uso: %{customdata[1]:.2f}%<br>" +
+    "Percentual de uso: %{y:.2f}%<br>"
+    "Número de usos da letra: %{customdata[1]}<br>"
     f"Artista: {i}<br>" +
     "<extra></extra>"
 )

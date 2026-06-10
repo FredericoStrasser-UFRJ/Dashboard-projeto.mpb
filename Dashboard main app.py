@@ -419,7 +419,15 @@ def gera_graficos(input_par, input_art, input_mus):
                 modo = m[0]
                 notas = df_nota_fun[df_nota_fun["composition_name"] == i]["scale_degree"].tolist()
                 funções = df_nota_fun[df_nota_fun["composition_name"] == i]["note_function"].tolist()
-                nf_prime = list(zip(funções, notas))
+                funções_dic = {'x': "Inflexão",
+                            '1': "Notas triadicas (1,3 e 5)", '3': "Notas triadicas (1,3 e 5)", '5': "Notas triadicas (1,3 e 5)",
+                            '6': "Sétima/Sexta (6 e 7)", '7': "Sétima/Sexta (6 e 7)",
+                            '9': "Tensão simples (9, 11, 13 e 14)", '11': "Tensão simples (9, 11, 13 e 14)",
+                            '13': "Tensão simples (9, 11, 13 e 14)", '14': "Tensão simples (9, 11, 13 e 14)",
+                            'b9/#9': "Tensão alterada (b9/#9, #11 e b13)",
+                            '#11': "Tensão alterada (b9/#9, #11 e b13)", 'b13': "Tensão alterada (b9/#9, #11 e b13)"}
+                funções_hover = [funções_dic[x] for x in funções]
+                nf_custom = list(zip(funções_hover, notas))
                 raio = {'x': 1,
                             '1': 2, '3': 2, '5': 2,
                             '6': 3, '7': 3,
@@ -526,7 +534,7 @@ def gera_graficos(input_par, input_art, input_mus):
                         tickvals=[0, 1, 2, 3, 4, 5],
                         ticktext=["", "", "", "", "", ""])))
                     
-                fig.update_traces(customdata=nf_prime,
+                fig.update_traces(customdata=nf_custom,
                                 hovertemplate=
                                 f"Artista: {art_lab}<br>" +
                                 f"Música: {i}<br>" +

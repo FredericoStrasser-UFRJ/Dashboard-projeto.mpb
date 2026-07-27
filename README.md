@@ -1,4 +1,4 @@
-This is the prototype of the new interactive dashboard designed to analise the database of "Projeto MPB", a study of the use of harmonic, melodic and rithmic patterns and techniques of composers in popular brazilian music.
+This repository contains a prototype for a new interactive dashboard designed to analyze the Projeto MPB database. Projeto MPB investigates the harmonic, melodic, and rhythmic patterns and techniques used by composers in Brazilian popular music.
 
 More info can be found at: 
 https://projetompb.com.br/

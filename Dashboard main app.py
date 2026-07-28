@@ -22,10 +22,7 @@ arts_dict={'João Bosco': 'BOSCO',
                            'Milton Nascimento': 'MILTON',
                            'Rita Lee': 'RITA'}
 
-app = Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP],
-            meta_tags=[
-        {"name": "viewport", "content": "width=device-width, initial-scale=1.0"},
-    ])
+app = Dash(__name__,meta_tags=[{"name": "viewport", "content": "width=device-width, initial-scale=1.0"},])
 
 app.layout = dbc.Container([
     dbc.Row([
@@ -53,8 +50,8 @@ app.layout = dbc.Container([
     ]),
     
     dbc.Row([
-        dbc.Col(dcc.Dropdown(id="dropdown-par", options=['c-letras', 'r-letras',
-                                                          'Perfil métrico', 'Tipos acordais',
+        dbc.Col(dcc.Dropdown(id="dropdown-par", options=['c-letras','Bigramas de c-letras', 'r-letras',
+                                                         'Bigramas de r-letras', 'Perfil métrico', 'Tipos acordais',
                                                           'Categorias funcionais', 'Classes funcionais', 'Função de nota',
                                                           'Funções nota-acorde para músicas'],
                                                           labels= {'search': 'Procurar'}, className="mb-4"),
@@ -216,6 +213,166 @@ def gera_graficos(input_par, input_art, input_mus):
             )
     # caso a row encha ele automaticamente cria uma nova
         return dbc.Row(grafs)
+
+    if input_par == "Bigramas de c-letras":
+            #cria lista vazia para graficos
+            grafs = []
+            #itera para cada grafico
+            for i in input_art:
+                #junta todas as palavras usadas pelo artista
+                art_lab = next(k for k, v in arts_dict.items() if v == i)
+                di = Counter(value[i:i+2]
+                                 for value in df_contorno["c_word"].dropna().astype(str)
+                                 for i in range(len(value) - 1))
+                di_20 = dict(di.most_common(20))
+                #calcula porcentagem de uso
+                porcentagem = [
+            (v / sum(di.values())) *100 
+            for v in di_20.values()
+            ]
+                #gera os graficos
+                fig = px.bar(
+                    x=list(di_20.keys()),
+                    y=list(porcentagem),
+                    labels={
+                        "x": "Bigrama de c-letras",
+                        "y": "Porcentagem de uso"
+                    },
+                    title=art_lab
+                )
+                #centraliza o titulo
+                fig.update_layout(title_x=0.5)
+                #da nome pra cada letra
+                labels = {
+            'u': 'Uníssono',
+            'p': 'Passo descendente',
+            'P': 'Passo ascendente',
+            'a': 'Arpejo descendente',
+            'A': 'Arpejo ascendente',
+            's': 'Salto descendente',
+            'S': 'Salto ascendente'
+        }
+                new_label = {key1 + key2: f"{value1} depois {value2}"
+                                                  for key1, value1 in labels.items()
+                                                  for key2, value2 in labels.items()}
+                #gera uma lista com os novos nomes e com os valores de aparição
+                customdata = [
+            [
+                new_label[k],
+                v
+            ]
+            for k, v in di_20.items()
+        ]
+                #define o hover
+                fig.update_traces(
+                    customdata=customdata,
+            hovertemplate=
+            f"Artista: {art_lab}<br>" +
+            "Bigrama: %{x}<br>" +
+            "Descrição do bigrama: %{customdata[0]}<br>" +
+            "Percentual de uso: %{y:.2f}%<br>" +
+            "Número de usos do bigrama: %{customdata[1]}<br>" +
+            "<extra></extra>"
+        )
+                #adiciona cada grafico em uma coluna 
+                grafs.append(
+                    dbc.Col(
+                        dcc.Graph(figure=fig),
+                        width=12
+                    )
+                )
+            # caso a row encha ele automaticamente cria uma nova
+            return dbc.Row(grafs)
+    
+    if input_par == "Bigramas de r-letras":
+                #cria lista vazia para graficos
+                grafs = []
+                #itera para cada grafico
+                for i in input_art:
+                    #junta todas as palavras usadas pelo artista
+                    art_lab = next(k for k, v in arts_dict.items() if v == i)
+                    di = Counter(value[i:i+2]
+                                     for value in df_contorno["r_word"].dropna().astype(str)
+                                     for i in range(len(value) - 1))
+                    di_20 = dict(di.most_common(20))
+                    #calcula porcentagem de uso
+                    porcentagem = [
+                (v / sum(di.values())) *100 
+                for v in di_20.values()
+                ]
+                    #gera os graficos
+                    fig = px.bar(
+                        x=list(di_20.keys()),
+                        y=list(porcentagem),
+                        labels={
+                            "x": "Bigrama de r-letras",
+                            "y": "Porcentagem de uso"
+                        },
+                        title=art_lab
+                    )
+                    #centraliza o titulo
+                    fig.update_layout(title_x=0.5)
+                    #da nome pra cada letra
+                    labels = {
+                            'a': '□□□□ □□□□ □□□□',
+                            'b': '■□□□ □□□□ □□□□',
+                            'c': '□□□■ □□□□ □□□□',
+                            'd': '□□□□ ■□□□ □□□□',
+                            'e': '□□□□ □□■□ □□□□',
+                            'f': '□□□□ □□□□ ■□□□',
+                            'g': '□□□□ □□□□ □■□□',
+                            'h': '■□□■ □□□□ □□□□',
+                            'i': '■□□□ ■□□□ □□□□',
+                            'j': '■□□□ □□■□ □□□□',
+                            'k': '■□□□ □□□□ ■□□□',
+                            'l': '■□□□ □□□□ □■□□',
+                            'm': '□□□■ □□■□ □□□□',
+                            'n': '□□□■ □□□□ □■□□',
+                            'o': '□□□□ ■□□□ ■□□□',
+                            'p': '□□□□ □□■□ □■□□',
+                            'q': '■□□■ □□■□ □□□□',
+                            'r': '■□□■ □□□□ □■□□',
+                            's': '■□□□ ■□□□ ■□□□',
+                            't': '■□□□ □□■□ □■□□',
+                            'u': '□□□■ □□■□ □■□□',
+                            'v': '■□□■ □□■□ □■□□',
+                            'w': '■□□□ □□■□ ■□■□',
+                            'x': '■□□■ □□■□ ■□■□',
+                            'y': '□□■□ ■□■□ ■□■□',
+                            'z': '■□■□ ■□■□ ■□■□'
+                        }
+                    
+                    new_label = {key1 + key2: f"{value1} {value2}"
+                                                      for key1, value1 in labels.items()
+                                                      for key2, value2 in labels.items()}
+                    #gera uma lista com os novos nomes e com os valores de aparição
+                    customdata = [
+                [
+                    new_label[k],
+                    v
+                ]
+                for k, v in di_20.items()
+            ]
+                    #define o hover
+                    fig.update_traces(
+                        customdata=customdata,
+                hovertemplate=
+                f"Artista: {art_lab}<br>" +
+                "Bigrama: %{x}<br>" +
+                "Figura representativa: %{customdata[0]}<br>" +
+                "Percentual de uso: %{y:.2f}%<br>" +
+                "Número de usos do bigrama: %{customdata[1]}<br>" +
+                "<extra></extra>"
+            )
+                    #adiciona cada grafico em uma coluna 
+                    grafs.append(
+                        dbc.Col(
+                            dcc.Graph(figure=fig),
+                            width=12
+                        )
+                    )
+                # caso a row encha ele automaticamente cria uma nova
+                return dbc.Row(grafs)
 
     if input_par == "r-letras":
 #cria lista vazia para graficos
@@ -559,19 +716,16 @@ def gera_graficos(input_par, input_art, input_mus):
         grafs = []
         for i in input_art:
             art_lab = next(k for k, v in arts_dict.items() if v == i)
-            c = ",".join(
-                df_nota_fun[df_nota_fun["corpus_id"] == i]["note_function"].tolist()
-                )
-#conta o numero de apariçoes de cada letra e gera um dicionario
-            di = {k: Counter(c.split(","))[k]
-            for k in ['x', '1', '3', '5', '6', '7', '9', '11', '13', '14', 'b9/#9', '#11', 'b13']
-            }
-#calcula porcentagem de uso
+            keys = ['x', '1', '3', '5', '6', '7', '9', '11',
+        '13', '14', 'b9/#9', '#11', 'b13']
+            counts = Counter(df_nota_fun.loc[df_nota_fun["corpus_id"] == i, "note_function"])
+            di = {k: counts[k] for k in keys}
+            #calcula porcentagem de uso
             porcentagem = [
         (v / sum(di.values())) *100 
         for v in di.values()
         ]
-#gera os graficos
+            #gera os graficos
             fig = px.bar(
                 x=list(di.keys()),
                 y=list(porcentagem),
@@ -581,9 +735,9 @@ def gera_graficos(input_par, input_art, input_mus):
                 },
                 title=art_lab
             )
-#centraliza o titulo
+            #centraliza o titulo
             fig.update_layout(title_x=0.5)
-#da nome pra cada letra
+            #da nome pra cada função
             fun_dic = {'x': "Inflexão",
                             '1': "Fundamental", '3': "Terça", '5': "Quinta",
                             '6': "Sexta", '7': "Sétima",
@@ -591,7 +745,7 @@ def gera_graficos(input_par, input_art, input_mus):
                             '13': "Décima terceira", '14': "Décima quarta",
                             'b9/#9': "Nona alterada",
                             '#11': "Décima primeira aumentada", 'b13': "Décima terceira bemol"}
-    #gera uma lista com os novos nomes e com os valores de aparição
+            #gera uma lista com os novos nomes e com os valores de aparição
             customdata = [
         [
             fun_dic[k],
@@ -599,7 +753,7 @@ def gera_graficos(input_par, input_art, input_mus):
         ]
         for k, v in di.items()
     ]
-    #define o hover
+            #define o hover
             fig.update_traces(
                 customdata=customdata,
         hovertemplate=
@@ -608,14 +762,14 @@ def gera_graficos(input_par, input_art, input_mus):
         "Percentual de uso: %{y:.2f}%<br>" +
         "<extra></extra>"
     )
-    #adiciona cada grafico em uma coluna 
+            #adiciona cada grafico em uma coluna 
             grafs.append(
                 dbc.Col(
                     dcc.Graph(figure=fig),
                     width=6
                 )
             )
-    # caso a row encha ele automaticamente cria uma nova
+        # caso a row encha ele automaticamente cria uma nova
         return dbc.Row(grafs)
     
     if input_par == "Perfil métrico":
@@ -874,18 +1028,22 @@ def info(input_par):
         return dbc.Col(html.H6(
             ["Neste modelo ""*"" representa uma tríade maior e ""*m"" uma tríade menor.",
             html.Br(),
-            "Pela grande quantidade de acordes diferentes, apresentamos aqui os 20 mais recorrentes (em ordem decrescente) no repertório do artista"],
+            "Pela grande quantidade de acordes diferentes, apresentamos aqui os 20 mais recorrentes (em ordem decrescente) no repertório do artista/grupo de controle"],
             className="text-center fs-1, mb-4"), width={"size": 12, "offset": 0, "order": 1})
     
     if input_par == "Categorias funcionais":
         return dbc.Col(html.H6(
-            "Pela grande quantidade de funções diferentes, apresentamos aqui as 20 mais recorrentes (em ordem decrescente) no repertório do artista.",
+            "Pela grande quantidade de funções diferentes, apresentamos aqui as 20 mais recorrentes (em ordem decrescente) no repertório do artista/grupo de controle.",
                                className="text-center fs-1, mb-4"), width={"size": 12, "offset": 0, "order": 1})
-    
+
+    if input_par == "Bigramas de c-letras" or "Bigramas de r-letras":
+        return dbc.Col(html.H6(
+            "Pela grande quantidade de bigramas diferentes, apresentamos aqui os 20 mais recorrentes (em ordem decrescente) no repertório do artista/grupo de controle.",
+                                className="text-center fs-1, mb-4"), width={"size": 12, "offset": 0, "order": 1})
     
 
             
 
-        
+          
 if __name__ == '__main__':
     app.run(debug=True)

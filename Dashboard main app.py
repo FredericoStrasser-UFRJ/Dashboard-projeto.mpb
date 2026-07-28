@@ -22,7 +22,10 @@ arts_dict={'João Bosco': 'BOSCO',
                            'Milton Nascimento': 'MILTON',
                            'Rita Lee': 'RITA'}
 
-app = Dash(__name__,meta_tags=[{"name": "viewport", "content": "width=device-width, initial-scale=1.0"},])
+app = Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP],
+            meta_tags=[
+        {"name": "viewport", "content": "width=device-width, initial-scale=1.0"},
+    ])
 
 app.layout = dbc.Container([
     dbc.Row([

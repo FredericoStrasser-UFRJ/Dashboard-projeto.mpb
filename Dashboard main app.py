@@ -6,10 +6,21 @@ import dash_bootstrap_components as dbc
 from collections import Counter
 from plotly.graph_objects import Figure
 from collections import defaultdict
+import os
 
-df_contorno=pd.read_csv("https://raw.githubusercontent.com/ProjetoMPB/mpb-corpus/refs/heads/main/dataset/contour_rhythm.csv",keep_default_na=False)
-df_harmonia=pd.read_csv("https://raw.githubusercontent.com/ProjetoMPB/mpb-corpus/refs/heads/main/dataset/harmony.csv")
-df_nota_fun=pd.read_csv('https://raw.githubusercontent.com/ProjetoMPB/mpb-corpus/refs/heads/main/dataset/note_function.csv')
+######################
+## CARREGA OS DADOS ##
+######################
+
+df_contorno_artista=pd.read_csv("https://raw.githubusercontent.com/ProjetoMPB/mpb-corpus/refs/heads/main/dataset/contour_rhythm.csv",keep_default_na=False)
+df_harmonia_artista=pd.read_csv("https://raw.githubusercontent.com/ProjetoMPB/mpb-corpus/refs/heads/main/dataset/harmony.csv")
+df_nota_fun_artista=pd.read_csv("https://raw.githubusercontent.com/ProjetoMPB/mpb-corpus/refs/heads/main/dataset/note_function.csv")
+df_contorno_grupo=pd.read_csv("insira o link",keep_default_na=False)
+df_harmonia_grupo=pd.read_csv("insira o link")
+df_nota_fun_grupo=pd.read_csv("insira o link")
+df_contorno=pd.concat([df_contorno_artista, df_contorno_grupo], ignore_index=True)
+df_harmonia=pd.concat([df_harmonia_artista, df_harmonia_grupo], ignore_index=True)
+df_nota_fun=pd.concat([df_nota_fun_artista, df_nota_fun_grupo], ignore_index=True)
 artistas = sorted(list(set(df_contorno["corpus_id"].tolist())))
 arts_dict={'João Bosco': 'BOSCO',
                            'Caetano Veloso': 'CAETANO',
@@ -20,21 +31,34 @@ arts_dict={'João Bosco': 'BOSCO',
                            'Tom Jobim': 'JOBIM',
                            'Ivan Lins': 'LINS',
                            'Milton Nascimento': 'MILTON',
-                           'Rita Lee': 'RITA'}
+                           'Rita Lee': 'RITA', 
+                           'Samba': 'SAMBA',
+                           'Choro': 'CHORO',
+                           'Jazz': 'JAZZ'}
+
+############################
+## INICIALIZA O DASHBOARD ##
+############################
 
 app = Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP],
             meta_tags=[
         {"name": "viewport", "content": "width=device-width, initial-scale=1.0"},
     ])
 
+server = app.server
+
+###############
+## DASHBOARD ##
+###############
+
 app.layout = dbc.Container([
     dbc.Row([
-        dbc.Col(html.H1("Dashboard projeto MPB",
+        dbc.Col(html.H1("Dashboard Projeto MPB",
                         className="text-center fs-1, mb-4"), width=12)
     ]),
 
     dbc.Row([
-        dbc.Col(html.H6(["Entenda a base de dados acessando os link no tópico \"Fundamentos teóricos e metodológicos\" no site:",
+        dbc.Col(html.H6(["Entenda a base de dados acessando",
                         html.Br(),
                         html.A(
                         "projetompb.com.br",
@@ -53,10 +77,10 @@ app.layout = dbc.Container([
     ]),
     
     dbc.Row([
-        dbc.Col(dcc.Dropdown(id="dropdown-par", options=['c-letras','Bigramas de c-letras', 'r-letras',
+        dbc.Col(dcc.Dropdown(id="dropdown-par", options=['c-letras', 'r-letras', 'Bigramas de c-letras',
                                                          'Bigramas de r-letras', 'Perfil métrico', 'Tipos acordais',
-                                                          'Categorias funcionais', 'Classes funcionais', 'Função de nota',
-                                                          'Funções nota-acorde para músicas'],
+                                                         'Categorias funcionais', 'Classes funcionais', 'Nota-função',
+                                                         'Teia de notas-função'],
                                                           labels= {'search': 'Procurar'}, className="mb-4"),
             width={"size": 4, "offset": 4, "order": 1})
             ]),
@@ -83,9 +107,12 @@ app.layout = dbc.Container([
                                                                         {"label": 'Ivan Lins', "value": 'LINS'},
                                                                         {"label": 'Milton Nascimento', "value": 'MILTON'},
                                                                         {"label": 'Rita Lee', "value": 'RITA'},
+                                                                        {"label": 'Samba', "value": 'SAMBA'},
+                                                                        {"label": 'Choro', "value": 'CHORO'},
+                                                                        {"label": 'Jazz ', "value": 'JAZZ'},
                                                                         ], labels={
-            'select_all': 'selecionar todos',
-            'deselect_all': 'limpar a seleção',
+            'select_all': 'Selecionar todos',
+            'deselect_all': 'Limpar a seleção',
             'search': 'Procurar'}),
             width={"size": 12, "offset": 0, "order": 1}, className="mb-4")
     ]),
@@ -107,7 +134,7 @@ app.layout = dbc.Container([
     Input(component_id="dropdown-par", component_property="value"),
     )
 def mostra_drop(input_par):
-    if input_par == 'Funções nota-acorde para músicas':
+    if input_par == 'Teia de notas-função':
         return {"display": "block"}
     return {"display": "none"}
 
@@ -171,7 +198,7 @@ def gera_graficos(input_par, input_art, input_mus):
                 x=list(di.keys()),
                 y=list(porcentagem),
                 labels={
-                    "x": "Letras",
+                    "x": "c-letra",
                     "y": "Porcentagem de uso"
                 },
                 title=art_lab
@@ -201,10 +228,10 @@ def gera_graficos(input_par, input_art, input_mus):
                 customdata=customdata,
         hovertemplate=
         f"Artista: {art_lab}<br>" +
-        "C-letra: %{x}<br>" +
-        "Descrição da C-letra: %{customdata[0]}<br>" +
+        "c-letra: %{x}<br>" +
+        "Descrição da c-letra: %{customdata[0]}<br>" +
         "Percentual de uso: %{y:.2f}%<br>" +
-        "Número de usos da letra: %{customdata[1]}<br>" +
+        "Contagem de uso: %{customdata[1]}<br>" +
         "<extra></extra>"
     )
     #adiciona cada grafico em uma coluna 
@@ -255,7 +282,7 @@ def gera_graficos(input_par, input_art, input_mus):
             's': 'Salto descendente',
             'S': 'Salto ascendente'
         }
-                new_label = {key1 + key2: f"{value1} depois {value2}"
+                new_label = {key1 + key2: f"{value1} seguido de {value2.lower()}"
                                                   for key1, value1 in labels.items()
                                                   for key2, value2 in labels.items()}
                 #gera uma lista com os novos nomes e com os valores de aparição
@@ -271,10 +298,10 @@ def gera_graficos(input_par, input_art, input_mus):
                     customdata=customdata,
             hovertemplate=
             f"Artista: {art_lab}<br>" +
-            "Bigrama: %{x}<br>" +
-            "Descrição do bigrama: %{customdata[0]}<br>" +
+            "Bigrama de c-letras: %{x}<br>" +
+            "Descrição do bigrama de c-letras: %{customdata[0]}<br>" +
             "Percentual de uso: %{y:.2f}%<br>" +
-            "Número de usos do bigrama: %{customdata[1]}<br>" +
+            "Contagem de uso: %{customdata[1]}<br>" +
             "<extra></extra>"
         )
                 #adiciona cada grafico em uma coluna 
@@ -361,10 +388,10 @@ def gera_graficos(input_par, input_art, input_mus):
                         customdata=customdata,
                 hovertemplate=
                 f"Artista: {art_lab}<br>" +
-                "Bigrama: %{x}<br>" +
-                "Figura representativa: %{customdata[0]}<br>" +
+                "Bigrama de r-letras: %{x}<br>" +
+                "Pontos de ataque: %{customdata[0]}<br>" +
                 "Percentual de uso: %{y:.2f}%<br>" +
-                "Número de usos do bigrama: %{customdata[1]}<br>" +
+                "Contagem de uso: %{customdata[1]}<br>" +
                 "<extra></extra>"
             )
                     #adiciona cada grafico em uma coluna 
@@ -401,7 +428,7 @@ def gera_graficos(input_par, input_art, input_mus):
                 x=list(di.keys()),
                 y=list(porcentagem),
                 labels={
-                    "x": "Letras",
+                    "x": "r-letra",
                     "y": "Porcentagem de uso"
                 },
                 title=art_lab
@@ -450,10 +477,10 @@ def gera_graficos(input_par, input_art, input_mus):
                 customdata=customdata,
         hovertemplate=
         f"Artista: {art_lab}<br>" +
-        "R-letra: %{x}<br>" +
+        "r-letra: %{x}<br>" +
         "Pontos de ataque: %{customdata[0]}<br>" +
         "Percentual de uso: %{y:.2f}%<br>" +
-        "Número de usos da letra: %{customdata[1]}<br>" +
+        "Contagem de uso: %{customdata[1]}<br>" +
         "<extra></extra>"
     )
     #adiciona cada grafico em uma coluna 
@@ -487,7 +514,7 @@ def gera_graficos(input_par, input_art, input_mus):
                 x=list(di_20.keys()),
                 y=list(porcentagem),
                 labels={
-                    "x": "Tipos de acorde",
+                    "x": "Tipo acordal",
                     "y": "Porcentagem de uso"
                 },
                 title=art_lab
@@ -503,9 +530,9 @@ def gera_graficos(input_par, input_art, input_mus):
             fig.update_traces(customdata=customdata,
         hovertemplate=
         f"Artista: {art_lab}<br>" +
-        "Tipo de Acorde: %{x}<br>" +
+        "Tipo acordal: %{x}<br>" +
         "Percentual de uso: %{y:.2f}%<br>" +
-        "Número de usos do acorde: %{customdata[0]}<br>" +
+        "Contagem de uso: %{customdata[0]}<br>" +
         "<extra></extra>"
     )
     #adiciona cada grafico em uma coluna 
@@ -539,7 +566,7 @@ def gera_graficos(input_par, input_art, input_mus):
                 x=list(di_20.keys()),
                 y=list(porcentagem),
                 labels={
-                    "x": "Categoria do Acorde",
+                    "x": "Categoria funcional",
                     "y": "Porcentagem de uso"
                 },
                 title=art_lab
@@ -555,9 +582,9 @@ def gera_graficos(input_par, input_art, input_mus):
             fig.update_traces(customdata=customdata,
         hovertemplate=
         f"Artista: {art_lab}<br>" +
-        "Categoria Funcional: %{x}<br>" +
+        "Categoria funcional: %{x}<br>" +
         "Percentual de uso: %{y:.2f}%<br>" +
-        "Número de usos: %{customdata[0]}<br>" +
+        "Contagem de uso: %{customdata[0]}<br>" +
         "<extra></extra>"
     )
     #adiciona cada grafico em uma coluna 
@@ -571,7 +598,7 @@ def gera_graficos(input_par, input_art, input_mus):
     # caso a row encha ele automaticamente cria uma nova
         return dbc.Row(grafs)
     
-    if input_par == "Classes funcionais":
+    if input_par == "Classes  funcionais":
     #cria lista vazia para graficos
             grafs = []
     #itera para cada grafico
@@ -582,118 +609,118 @@ def gera_graficos(input_par, input_art, input_mus):
         #conta os mais usados e gera porcentagem
                 di = Counter(c)
                 func_cat_to_func_class = {
-    "I": "DIA",
-    "II": "DIA",
-    "III": "DIA",
-    "IV": "DIA",
-    "V": "DIA",
-    "VI": "DIA",
-    "VII": "DIA",
-    "V/II": "PRE",
-    "V/III": "PRE",
-    "V/IV": "PRE",
-    "V/V": "PRE",
-    "V/VI": "PRE",
-    "II__X": "PRE",
-    "SubV": "PRE",
-    "SubV/II": "PRE",
-    "SubV/III": "PRE",
-    "SubV/IV": "PRE",
-    "SubV/V": "PRE",
-    "SubV/VI": "PRE",
-    "V°": "PRE",
-    "V°/II": "PRE",
-    "V°/III": "PRE",
-    "V°/IV": "PRE",
-    "V°/V": "PRE",
-    "V°/VI": "PRE",
-    "bIII°": "PRE",
-    "bVII°": "PRE",
-    "IV° [pass]": "PRE",
-    "I°": "PRE",
-    "IV° [aux]": "PRE",
-    "VIIm7": "EC1",
-    "#IVm7(b5)": "EC1",
-    "IIIm7(b5)": "EC1",
-    "Vm7": "EC1",
-    "bVII7M": "EC1",
-    "Im7": "EC1",
-    "IV7": "EC1",
-    "bIII7M": "EC1",
-    "IVm7": "sd",
-    "IIm7(b5)": "sd",
-    "bVI7M": "sd",
-    "bVII7": "sd",
-    "bII7M": "sd",
-    "IIIM7": "EC2",
-    "bVM7": "EC2",
-    "VIM7": "EC2",
-    "bVIIm7": "EC2",
-    "bVIm7": "EC2",
-    "bIIm7": "EC2",
-    "bIIIm7": "EC2",
-    "Np/II": "NPS",
-    "Np/III": "NPS",
-    "Np/IV": "NPS",
-    "Np/V": "NPS",
-    "Np/VI": "NPS",
-    "aNP": "aPRE",
-    "aNP/II": "aPRE",
-    "aNP/III": "aPRE",
-    "aNP/IV": "aPRE",
-    "aNP/V": "aPRE",
-    "aNP/VI": "aPRE",
-    "aSubV": "aPRE",
-    "aSubV/II": "aPRE",
-    "aSubV/III": "aPRE",
-    "aSubV/IV": "aPRE",
-    "aSubV/V": "aPRE",
-    "aSubV/VI": "aPRE",
-    "V/bII": "DT",
-    "V/bIII": "DT",
-    "V/bVI": "DT",
-    "V/bVII": "DT",
-    "?": "ind"
-}
-                new = defaultdict(int)
-                for k, v in di.items():
-                    if k in func_cat_to_func_class:
-                        k2 = func_cat_to_func_class[k]
-                        new[k2] += v
-                new = dict(sorted(new.items(),key=lambda item: item[1],
-                                                             reverse=True))
+                    "I": "DIA",
+                    "II": "DIA",
+                    "III": "DIA",
+                    "IV": "DIA",
+                    "V": "DIA",
+                    "VI": "DIA",
+                    "VII": "DIA",
+                    "V/II": "PRE",
+                    "V/III": "PRE",
+                    "V/IV": "PRE",
+                    "V/V": "PRE",
+                    "V/VI": "PRE",
+                    "II__X": "PRE",
+                    "SubV": "PRE",
+                    "SubV/II": "PRE",
+                    "SubV/III": "PRE",
+                    "SubV/IV": "PRE",
+                    "SubV/V": "PRE",
+                    "SubV/VI": "PRE",
+                    "V°": "PRE",
+                    "V°/II": "PRE",
+                    "V°/III": "PRE",
+                    "V°/IV": "PRE",
+                    "V°/V": "PRE",
+                    "V°/VI": "PRE",
+                    "bIII°": "PRE",
+                    "bVII°": "PRE",
+                    "IV° [pass]": "PRE",
+                    "I°": "PRE",
+                    "IV° [aux]": "PRE",
+                    "VIIm7": "EC1",
+                    "#IVm7(b5)": "EC1",
+                    "IIIm7(b5)": "EC1",
+                    "Vm7": "EC1",
+                    "bVII7M": "EC1",
+                    "Im7": "EC1",
+                    "IV7": "EC1",
+                    "bIII7M": "EC1",
+                    "IVm7": "EC1",
+                    "IIm7(b5)": "EC1",
+                    "bVI7M": "EC1",
+                    "bVII7": "EC1",
+                    "bII7M": "EC1",
+                    "IIIM7": "EC2",
+                    "bVM7": "EC2",
+                    "VIM7": "EC2",
+                    "bVIIm7": "EC2",
+                    "bVIm7": "EC2",
+                    "bIIm7": "EC2",
+                    "bIIIm7": "EC2",
+                    "Np/II": "NPS",
+                    "Np/III": "NPS",
+                    "Np/IV": "NPS",
+                    "Np/V": "NPS",
+                    "Np/VI": "NPS",
+                    "aNP": "aPRE",
+                    "aNP/II": "aPRE",
+                    "aNP/III": "aPRE",
+                    "aNP/IV": "aPRE",
+                    "aNP/V": "aPRE",
+                    "aNP/VI": "aPRE",
+                    "aSubV": "aPRE",
+                    "aSubV/II": "aPRE",
+                    "aSubV/III": "aPRE",
+                    "aSubV/IV": "aPRE",
+                    "aSubV/V": "aPRE",
+                    "aSubV/VI": "aPRE",
+                    "V/bII": "DT",
+                    "V/bIII": "DT",
+                    "V/bVI": "DT",
+                    "V/bVII": "DT",
+                    "?": "ind"
+                }
+                result = {}
+
+                for key, value in di.items():
+                    new_key = func_cat_to_func_class[key]
+                    result[new_key] = result.get(new_key, 0) + value
+
+                    order = ['DIA','PRE','EC1','DT','NPS','aPRE','EC2','ind']
+                    result = {key: result.get(key, 0) for key in order}
 
                 porcentagem = [
-                (v / sum(new.values())) *100 
-                for v in new.values()
+                (v / sum(result.values())) *100 
+                for v in result.values()
                 ]
         #gera os graficos
                 fig = px.bar(
-                    x=list(new.keys()),
+                    x=list(result.keys()),
                     y=list(porcentagem),
                     labels={
-                        "x": "Classe do Acorde",
+                        "x": "Classe funcional",
                         "y": "Porcentagem de uso"
                     },
                     title=art_lab
                 )
                 fig.update_layout(title_x=0.5)
                 labels = {'DIA': 'Diatônico',
-                                         'PRE': 'Preparador',
-                                         'EC1': 'Empréstimo cromático 1',
-                                         'EC2': 'Empréstimo cromático 2',
-                                         'sd': 'Subdominante menor',
-                                         'NPS': 'Napolitano',
-                                         'DT': 'Dominante terceário',
-                                         'aPRE': 'Anti preparador',
-                                         'ind': 'Classe indeterminada'
-                                         }
+                          'PRE': 'Preparador',
+                          'EC1': 'Empréstimo cromático de 1a ordem',
+                          'EC2': 'Empréstimo cromático de 2a ordem',
+                          'NPS': 'Napolitano secundário',
+                          'DT': 'Dominante terciário',
+                          'aPRE': 'Anti-preparador',
+                          'ind': 'Classe indeterminada'
+                        }
                 customdata= [
             [
                 labels[k],
                 v
             ]
-            for k,v in new.items()
+            for k,v in result.items()
         ]
         #define o hover
                 fig.update_traces(customdata=customdata,
@@ -702,7 +729,7 @@ def gera_graficos(input_par, input_art, input_mus):
             "Classe Funcional: %{x}<br>" +
             "Descrição da classe: %{customdata[0]}<br>" +
             "Percentual de uso: %{y:.2f}%<br>" +
-            "Número de usos: %{customdata[1]}<br>" +
+            "Contagem de uso: %{customdata[1]}<br>" +
             "<extra></extra>"
         )
         #adiciona cada grafico em uma coluna 
@@ -715,7 +742,7 @@ def gera_graficos(input_par, input_art, input_mus):
         # caso a row encha ele automaticamente cria uma nova
             return dbc.Row(grafs)
     
-    if input_par == "Função de nota" :
+    if input_par == "Nota-função" :
         grafs = []
         for i in input_art:
             art_lab = next(k for k, v in arts_dict.items() if v == i)
@@ -723,6 +750,7 @@ def gera_graficos(input_par, input_art, input_mus):
         '13', '14', 'b9/#9', '#11', 'b13']
             counts = Counter(df_nota_fun.loc[df_nota_fun["corpus_id"] == i, "note_function"])
             di = {k: counts[k] for k in keys}
+            print(counts , di)
             #calcula porcentagem de uso
             porcentagem = [
         (v / sum(di.values())) *100 
@@ -747,7 +775,7 @@ def gera_graficos(input_par, input_art, input_mus):
                             '9': "Nona", '11': "Décima primeira",
                             '13': "Décima terceira", '14': "Décima quarta",
                             'b9/#9': "Nona alterada",
-                            '#11': "Décima primeira aumentada", 'b13': "Décima terceira bemol"}
+                            '#11': "Décima primeira aumentada", 'b13': "Décima terceira menor"}
             #gera uma lista com os novos nomes e com os valores de aparição
             customdata = [
         [
@@ -761,8 +789,9 @@ def gera_graficos(input_par, input_art, input_mus):
                 customdata=customdata,
         hovertemplate=
         f"Artista: {art_lab}<br>" +
-        "Função no acorde: %{customdata[0]}<br>" +
+        "Função da nota em relação ao acorde subjacente: %{customdata[0]}<br>" +
         "Percentual de uso: %{y:.2f}%<br>" +
+        "Contagem de uso: %{customdata[1]}<br>"
         "<extra></extra>"
     )
             #adiciona cada grafico em uma coluna 
@@ -841,7 +870,7 @@ def gera_graficos(input_par, input_art, input_mus):
                 x=list(dict_posição_soma.keys()),
                 y=list(porcentagem),
                 labels={
-                    "x": "Posição do ataque",
+                    "x": "Ponto de ataque",
                     "y": "Porcentagem de uso"
                 },
                 title=art_lab
@@ -861,10 +890,9 @@ def gera_graficos(input_par, input_art, input_mus):
                 customdata=customdata,
         hovertemplate=
         f"Artista: {art_lab}<br>" +
-        "Posição do ataque: %{x}<br>" +
-        "Figura representativa: %{customdata[0]}<br>" +
+        "Ponto de ataque: %{x} %{customdata[0]} <br>" +
         "Percentual de uso: %{y:.2f}%<br>" +
-        "Número de usos: %{customdata[1]}<br>" +
+        "Contagem de uso: %{customdata[1]}<br>" +
         "<extra></extra>"
     )
     #adiciona cada grafico em uma coluna 
@@ -878,7 +906,7 @@ def gera_graficos(input_par, input_art, input_mus):
     # caso a row encha ele automaticamente cria uma nova
         return dbc.Row(grafs) 
     
-    if input_par == "Funções nota-acorde para músicas":
+    if input_par == "Teia de notas-função":
         grafs=[]
         if input_mus==None or input_mus==[]:
             return []
@@ -892,14 +920,13 @@ def gera_graficos(input_par, input_art, input_mus):
                 notas = df_nota_fun[df_nota_fun["composition_name"] == i]["scale_degree"].tolist()
                 funções = df_nota_fun[df_nota_fun["composition_name"] == i]["note_function"].tolist()
                 funções_dic = {'x': "Inflexão",
-                            '1': "Notas triadicas (1,3 e 5)", '3': "Notas triadicas (1,3 e 5)", '5': "Notas triadicas (1,3 e 5)",
+                            '1': "Notas triádicas (1,3 e 5)", '3': "Notas triádicas (1,3 e 5)", '5': "Notas triádicas (1,3 e 5)",
                             '6': "Sétima/Sexta (6 e 7)", '7': "Sétima/Sexta (6 e 7)",
                             '9': "Tensão simples (9, 11, 13 e 14)", '11': "Tensão simples (9, 11, 13 e 14)",
                             '13': "Tensão simples (9, 11, 13 e 14)", '14': "Tensão simples (9, 11, 13 e 14)",
                             'b9/#9': "Tensão alterada (b9/#9, #11 e b13)",
                             '#11': "Tensão alterada (b9/#9, #11 e b13)", 'b13': "Tensão alterada (b9/#9, #11 e b13)"}
                 funções_hover = [funções_dic[x] for x in funções]
-                nf_custom = list(zip(funções_hover, notas))
                 raio = {'x': 1,
                             '1': 2, '3': 2, '5': 2,
                             '6': 3, '7': 3,
@@ -940,6 +967,8 @@ def gera_graficos(input_par, input_art, input_mus):
                                 key=lambda x: x[1],  # ordena pela contagem
                                 reverse=True
                                 )
+                nf2_lista = [nf_contagem[x] for x in nf]
+                nf_custom = list(zip(funções_hover , notas, nf2_lista))
                 keys = [k for k, v in ordenado]
                 porcentagem = [
                     100 * v / sum(nf_contagem.values())
@@ -962,7 +991,7 @@ def gera_graficos(input_par, input_art, input_mus):
                     else:
                         return "> 10%"
 
-                faixas = [faixa(p) for p in porcentagem_array]
+               
 
                 fig = px.scatter_polar(r=raio_função, theta=ângulo_nota, color=porcentagem_array,
                                     color_continuous_scale=[
@@ -1010,9 +1039,10 @@ def gera_graficos(input_par, input_art, input_mus):
                                 hovertemplate=
                                 f"Artista: {art_lab}<br>" +
                                 f"Música: {i}<br>" +
-                                "Nota da escala: %{customdata[1]}<br>" +
-                                "função da nota: %{customdata[0]}<br>" +
-                                "Porcentagem de uso nota-função: %{marker.color:.2f}%<br>" +
+                                "Grau escalar: %{customdata[1]}<br>" +
+                                "Nota-função: %{customdata[0]}<br>" +
+                                "Porcentagem de uso: %{marker.color:.2f}%<br>" +
+                                "Contagem de uso: %{customdata[2]}<br>" +
                                 "<extra></extra>"
                                 )
                 grafs.append(dbc.Col(dcc.Graph(figure=fig),width=6))
@@ -1029,24 +1059,28 @@ def info(input_par):
 
     if input_par == "Tipos acordais":
         return dbc.Col(html.H6(
-            ["Neste modelo ""*"" representa uma tríade maior e ""*m"" uma tríade menor.",
+            ["Aqui ""*"" representa uma fundamental genérica.",
             html.Br(),
-            "Pela grande quantidade de acordes diferentes, apresentamos aqui os 20 mais recorrentes (em ordem decrescente) no repertório do artista/grupo de controle"],
+            "Pela grande quantidade de tipos acordais diferentes, mostramos aqui os 20 mais recorrentes nos repertórios selecionados."],
             className="text-center fs-1, mb-4"), width={"size": 12, "offset": 0, "order": 1})
     
     if input_par == "Categorias funcionais":
         return dbc.Col(html.H6(
-            "Pela grande quantidade de funções diferentes, apresentamos aqui as 20 mais recorrentes (em ordem decrescente) no repertório do artista/grupo de controle.",
+            "Pela grande quantidade de categorias funcionais diferentes, mostramos aqui as 20 mais recorrentes nos repertórios selecionados.",
                                className="text-center fs-1, mb-4"), width={"size": 12, "offset": 0, "order": 1})
 
-    if input_par == "Bigramas de c-letras" or "Bigramas de r-letras":
+    if input_par in ("Bigramas de c-letras", "Bigramas de r-letras"):
         return dbc.Col(html.H6(
-            "Pela grande quantidade de bigramas diferentes, apresentamos aqui os 20 mais recorrentes (em ordem decrescente) no repertório do artista/grupo de controle.",
+            "Pela grande quantidade de bigramas diferentes, mostramos aqui os 20 mais recorrentes nos repertórios selecionados.",
                                 className="text-center fs-1, mb-4"), width={"size": 12, "offset": 0, "order": 1})
     
 
+######################
+## RODA O DASHBOARD ##
+######################
             
+# if __name__ == "__main__":
+#     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 8050)))
 
-          
-if __name__ == '__main__':
+if __name__ == "__main__":
     app.run(debug=True)
